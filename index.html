@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Code Vault</title>
+<meta name="description" content="Your personal library for coursework code, with one-click copy.">
+<meta name="theme-color" content="#0E1013">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="vendor/hljs-theme.css">
+<style>
+:root{
+  --bg:#0E1013; --side:#12151A; --surface:#161A1F; --surface2:#1C2128; --code:#0B0D10;
+  --line:#2A313A; --line2:#3A4350; --text:#E6EAF0; --text2:#C9D1DB; --muted:#9AA4B2;
+  --accent:#2DD4BF; --ink:#04201C; --blue:#7DD3FC; --danger:#FCA5A5; --warn:#FBBF24;
+  --mono:ui-monospace,"Cascadia Mono","Cascadia Code",Consolas,"Roboto Mono","SF Mono",Menlo,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);-webkit-text-size-adjust:100%}
+body{min-height:100vh;min-height:100dvh}
+body.noscroll{overflow:hidden}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg{flex:none}
+
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100dvh}
+.side{position:sticky;top:0;height:100dvh;background:var(--side);border-right:1px solid var(--line);padding:24px 16px;display:flex;flex-direction:column;gap:28px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px;font-weight:600;font-size:17px;letter-spacing:-.01em}
+.logo{width:32px;height:32px;border-radius:8px;background:var(--accent);color:var(--ink);display:grid;place-items:center;font:600 13px var(--mono)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav a{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:10px;color:var(--muted);font-weight:500;font-size:15px}
+.nav a [data-ic]{display:flex}
+.nav a:hover{color:#fff}
+.nav a[aria-current=page]{background:var(--surface2);color:#fff}
+.nav a[aria-current=page] [data-ic]{color:var(--accent)}
+.sidefoot{margin-top:auto;border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.stat{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);line-height:1.35}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.dot.ok{background:var(--accent)} .dot.err{background:#F87171} .dot.busy{background:var(--warn)}
+.main{min-width:0;padding:32px 40px 56px}
+.wrap{max-width:1100px}
+
+/* ---------- type & controls ---------- */
+h1{margin:0;font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1.2;overflow-wrap:anywhere}
+h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+p{margin:0}
+.sub{color:var(--muted);font-size:15px;margin-top:6px;line-height:1.5}
+.head{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px}
+.head>div{min-width:0;flex:1 1 320px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--text);font-weight:600;font-size:14px;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--ink);font-size:15px}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.done{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.btn.danger{color:var(--danger)}
+.btn.sm{min-height:44px;padding:0 14px}
+.btn[disabled]{opacity:.55;cursor:default}
+.field{display:flex;flex-direction:column;gap:8px}
+label,.lbl{font-size:14px;font-weight:500;color:var(--text2)}
+.opt{font-weight:400;color:var(--muted)}
+input[type=text],input[type=search],input[type=email],input[type=password],input[type=url],select,textarea{width:100%;min-height:48px;padding:0 16px;background:var(--surface);border:1px solid var(--line);border-radius:10px;font-size:15px}
+textarea{padding:14px 16px;line-height:1.6;resize:vertical}
+textarea.codein{background:var(--code);font-family:var(--mono);font-size:14px;line-height:1.7;tab-size:4;white-space:pre;overflow:auto}
+input::placeholder,textarea::placeholder{color:#7C8798}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 21px,calc(100% - 14px) 21px;background-size:6px 6px;background-repeat:no-repeat;padding-right:36px}
+.search{position:relative;margin-bottom:16px}
+.search>svg{position:absolute;left:14px;top:15px;color:var(--muted)}
+.search input{padding-left:44px;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chip{min-height:44px;padding:0 18px;border-radius:22px;border:1px solid var(--line);background:transparent;color:var(--text2);font-weight:500;font-size:14px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.badge{display:inline-block;font:500 12px var(--mono);padding:4px 10px;border-radius:6px;background:var(--surface2);color:var(--blue)}
+.tag{display:inline-block;font-size:13px;padding:4px 10px;border-radius:6px;border:1px solid var(--line);color:var(--text2)}
+time,.when{font-size:13px;color:var(--muted)}
+
+/* ---------- library ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.card .top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card .title{font-size:17px;font-weight:600;line-height:1.35;overflow-wrap:anywhere;display:block}
+.grid.folders{gap:30px 16px;padding-top:16px}
+.card.folder{position:relative;padding:0;gap:0;border-radius:0 14px 14px 14px}
+.card.folder::before{content:'';position:absolute;left:-1px;top:-15px;width:104px;height:16px;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0}
+.card.folder:hover,.card.folder:focus-within{border-color:var(--accent)}
+.card.folder:hover::before,.card.folder:focus-within::before{border-color:var(--accent)}
+.fmain{display:flex;flex-direction:column;gap:12px;width:100%;min-height:44px;padding:20px 20px 14px;text-align:left;background:none;border:0;border-radius:0 14px 0 0;color:inherit}
+.fmain:focus-visible{outline-offset:-3px}
+.ftop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ficon{color:var(--accent);display:flex}
+.fmain .title{font-size:17px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.fmain:hover .title{color:var(--accent)}
+.fmeta{display:flex;flex-direction:column;gap:2px}
+.ffoot{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;padding:0 14px 14px;margin-top:auto}
+.meta{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);min-width:0}
+.empty{border:1px dashed var(--line2);border-radius:14px;padding:40px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--muted)}
+.empty strong{color:var(--text);font-size:17px}
+.banner{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid #5B4B1B;background:#1F1A0C;border-radius:12px;margin-bottom:20px;color:#F3E2A8;font-size:14px;line-height:1.5}
+.banner>div{display:flex;gap:10px;align-items:flex-start;flex:1 1 280px}
+
+/* ---------- entry view ---------- */
+.back{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:var(--muted);font-size:14px;font-weight:500;margin-bottom:8px}
+.back:hover{color:#fff}
+.sec{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;max-width:900px}
+.qtext{font-size:16px;line-height:1.7;color:#D5DBE3;white-space:pre-wrap;overflow-wrap:anywhere}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:12px}
+.shots img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#fff;display:block}
+.infos{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.codebox{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--code)}
+.codebar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px 10px 18px;background:var(--surface);border-bottom:1px solid var(--line)}
+.codebar .lang{font:13px var(--mono);color:var(--text2)}
+.code{display:flex;overflow:auto;background:var(--code);font-family:var(--mono);font-size:14px;line-height:1.7;max-height:70vh}
+.gutter{position:sticky;left:0;flex:none;padding:16px 12px 16px 18px;text-align:right;white-space:pre;color:#7C8798;background:var(--code);user-select:none;-webkit-user-select:none}
+.code pre{margin:0;padding:16px 24px 16px 4px;white-space:pre;tab-size:4;min-width:0;flex:1 0 auto}
+.code code{font:inherit;background:none}
+
+/* ---------- form ---------- */
+.form{display:flex;flex-direction:column;gap:22px;max-width:860px}
+.row2{display:flex;flex-wrap:wrap;gap:16px}
+.row2>.field:first-child{flex:1 1 200px}
+.row2>.field:last-child{flex:2 1 280px}
+.drop{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:20px;border:1.5px dashed var(--line2);border-radius:12px;background:var(--side)}
+.drop.over{border-color:var(--accent);background:#0F1E1D}
+.drop .ico{width:44px;height:44px;border-radius:10px;background:var(--surface2);color:var(--accent);display:grid;place-items:center}
+.drop .txt{flex:1 1 220px;display:flex;flex-direction:column;gap:4px;font-size:15px;font-weight:500}
+.drop .txt span{font-size:13px;font-weight:400;color:var(--muted)}
+.thumbs{display:flex;flex-wrap:wrap;gap:12px;margin-top:4px}
+.thumb{position:relative;width:132px;height:96px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .x{position:absolute;top:4px;right:4px;width:44px;height:44px;border-radius:50%;border:0;background:rgba(0,0,0,.72);color:#fff;display:grid;place-items:center;transform:scale(.72);transform-origin:top right}
+.err{color:var(--danger);font-size:14px;min-height:20px}
+.formfoot{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px}
+
+/* ---------- settings ---------- */
+.panel{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:22px;display:flex;flex-direction:column;gap:16px;max-width:760px;margin-bottom:20px}
+.panel h3{margin:0;font-size:18px;font-weight:600}
+.panel p{color:var(--muted);font-size:14px;line-height:1.6}
+.panel ol{margin:0;padding-left:20px;color:var(--muted);font-size:14px;line-height:1.8}
+.panel code{font:13px var(--mono);background:var(--surface2);padding:2px 6px;border-radius:5px;color:var(--text2)}
+.msg{font-size:14px;min-height:20px;color:var(--muted)}
+.msg.bad{color:var(--danger)} .msg.good{color:var(--accent)}
+.trashrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:10px}
+.trashrow .t{min-width:0;flex:1 1 240px;display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere}
+
+/* ---------- full screen ---------- */
+.fs{position:fixed;inset:0;z-index:50;background:var(--code);display:flex;flex-direction:column}
+.fsbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;padding-top:max(10px,env(safe-area-inset-top));background:var(--surface);border-bottom:1px solid var(--line)}
+.fsinfo{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 200px}
+.fsinfo strong{font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fsbtns{display:flex;flex-wrap:wrap;gap:8px}
+.fscode{flex:1;max-height:none;font-size:var(--fs,16px);padding-bottom:env(safe-area-inset-bottom)}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:#E6EAF0;color:#0E1013;padding:12px 18px;border-radius:10px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:.2s;z-index:80;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- phone / small windows ---------- */
+@media (max-width:820px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;left:0;right:0;bottom:0;top:auto;height:auto;z-index:20;flex-direction:row;padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line);gap:0}
+  .brand,.sidefoot{display:none}
+  .nav{flex-direction:row;width:100%;gap:2px}
+  .nav a{flex:1;flex-direction:column;justify-content:center;gap:2px;min-height:52px;padding:0 4px;font-size:12px;text-align:center}
+  .main{padding:20px 16px calc(92px + env(safe-area-inset-bottom))}
+  h1{font-size:25px}
+  .toast{bottom:calc(88px + env(safe-area-inset-bottom))}
+  .codebar .btn{flex:1 1 auto}
+  .code{max-height:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" aria-label="App">
+    <div class="brand"><span class="logo" aria-hidden="true">&lt;/&gt;</span>Code Vault</div>
+    <nav class="nav" aria-label="Main">
+      <a href="#/" data-r="lib"><span data-ic="lib"></span><span>Library</span></a>
+      <a href="#/new" data-r="new"><span data-ic="add"></span><span>Add entry</span></a>
+      <a href="#/trash" data-r="trash"><span data-ic="trash"></span><span>Trash</span></a>
+      <a href="#/settings" data-r="settings"><span data-ic="gear"></span><span>Settings</span></a>
+    </nav>
+    <div class="sidefoot">
+      <div class="stat"><span class="dot" id="sbDot"></span><span id="sbStat">Saved on this device</span></div>
+      <button type="button" class="btn" data-act="export"><span data-ic="download"></span>Export backup</button>
+      <button type="button" class="btn" data-act="install" id="sbInstall" hidden>Install app</button>
+    </div>
+  </aside>
+  <main class="main" id="view"></main>
+</div>
+
+<div id="fs" class="fs" role="dialog" aria-modal="true" aria-label="Full screen code" hidden>
+  <div class="fsbar">
+    <div class="fsinfo"><strong id="fsTitle"></strong><span class="badge" id="fsLang"></span></div>
+    <div class="fsbtns">
+      <button type="button" class="btn" data-act="fsMinus" aria-label="Smaller text">A&minus;</button>
+      <button type="button" class="btn" data-act="fsPlus" aria-label="Larger text">A+</button>
+      <button type="button" class="btn primary" data-act="fsCopy" id="fsCopy"><span data-ic="copy"></span>Copy all code</button>
+      <button type="button" class="btn" data-act="fsDetails"><span data-ic="folder"></span>Details</button>
+      <button type="button" class="btn" data-act="fsClose" id="fsClose" aria-label="Close full screen"><span data-ic="close"></span>Close</button>
+    </div>
+  </div>
+  <div class="code fscode" id="fsCode"></div>
+</div>
+
+<input type="file" id="imp" accept="application/json,.json" hidden>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="vendor/highlight.min.js"></script>
+<script src="config.js"></script>
+<script>
+'use strict';
+/* =====================================================================
+   Code Vault. Everything lives on your device first (IndexedDB).
+   If you sign in to Supabase in Settings, it is also synced to the cloud.
+   ===================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const LANGS = ['C', 'C++', 'Python', 'Java', 'JavaScript', 'SQL', 'HTML', 'CSS', 'Other'];
+const HL = { C: 'c', 'C++': 'cpp', Python: 'python', Java: 'java', JavaScript: 'javascript', SQL: 'sql', HTML: 'xml', CSS: 'css' };
+const ls = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+
+/* ---------- icons ---------- */
+const P = {
+  lib: '<path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/>',
+  add: '<path d="M12 5v14M5 12h14"/>',
+  trash: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+  check: '<path d="m5 12 5 5 9-10"/>',
+  expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+  image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-9 9"/>',
+  back: '<path d="M19 12H5"/><path d="m11 6-6 6 6 6"/>',
+  download: '<path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>',
+  upload: '<path d="M12 16V5"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  restore: '<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16v4Z"/>',
+  warn: '<path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4M12 17h.01"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>'
+};
+const ic = (name, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[name]}</svg>`;
+const fillIcons = (root = document) => $$('[data-ic]', root).forEach((el) => { el.innerHTML = ic(el.dataset.ic); });
+
+/* ---------- local database (IndexedDB) ---------- */
+let DB, entries = [], filter = 'All', q = '', lastExport = 0;
+const idb = (store, mode, fn) => new Promise((res, rej) => {
+  const tx = DB.transaction(store, mode);
+  const r = fn(tx.objectStore(store));
+  tx.oncomplete = () => res(r && r.result);
+  tx.onerror = () => rej(tx.error);
+  tx.onabort = () => rej(tx.error);
+});
+const openDB = () => new Promise((res, rej) => {
+  const r = indexedDB.open('codevault', 1);
+  r.onupgradeneeded = () => { r.result.createObjectStore('entries', { keyPath: 'id' }); r.result.createObjectStore('meta', { keyPath: 'k' }); };
+  r.onsuccess = () => res(r.result);
+  r.onerror = () => rej(r.error);
+});
+const dbAll = () => idb('entries', 'readonly', (s) => s.getAll());
+const dbPut = (e) => idb('entries', 'readwrite', (s) => s.put(e));
+const dbPutMany = (list) => idb('entries', 'readwrite', (s) => { list.forEach((e) => s.put(e)); });
+const getMeta = async (k) => { const r = await idb('meta', 'readonly', (s) => s.get(k)); return r ? r.v : undefined; };
+const setMeta = (k, v) => idb('meta', 'readwrite', (s) => s.put({ k, v }));
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+const live = () => entries.filter((e) => !e.deleted).sort((a, b) => b.createdAt - a.createdAt);
+const byId = (id) => entries.find((e) => e.id === id);
+const safeImg = (s) => typeof s === 'string' && /^data:image\/(jpeg|png|webp|gif);base64,/.test(s);
+
+async function saveEntry(e) {
+  e.updatedAt = Math.max(Date.now(), (byId(e.id)?.updatedAt || 0) + 1);
+  e.dirty = true;
+  await dbPut(e);
+  const i = entries.findIndex((x) => x.id === e.id);
+  if (i < 0) entries.push(e); else entries[i] = e;
+  scheduleSync();
+  return e;
+}
+
+/* ---------- dates ---------- */
+const fmtFull = (ts) => new Date(ts).toLocaleString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+const fmtShort = (ts) => {
+  const d = new Date(ts), sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleString(undefined, { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }), hour: 'numeric', minute: '2-digit' });
+};
+const fmtTime = (ts) => new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+
+/* ---------- code rendering ---------- */
+function highlight(code, lang) {
+  try {
+    const l = HL[lang];
+    if (window.hljs && l && hljs.getLanguage(l)) return hljs.highlight(code, { language: l, ignoreIllegals: true }).value;
+  } catch {}
+  return esc(code);
+}
+function codeHTML(e) {
+  const n = e.code.replace(/\n$/, '').split('\n').length;
+  const nums = Array.from({ length: n }, (_, i) => i + 1).join('\n');
+  return `<div class="gutter" aria-hidden="true">${nums}</div><pre><code class="hljs">${highlight(e.code, e.lang)}</code></pre>`;
+}
+
+/* ---------- clipboard & toast ---------- */
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch {}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    const ok = document.execCommand('copy'); ta.remove(); return ok;
+  } catch { return false; }
+}
+function flashCopied(btn, ok) {
+  if (!btn || btn.dataset.busy) return;
+  const old = btn.innerHTML;
+  btn.dataset.busy = '1';
+  btn.innerHTML = (ok ? ic('check') + 'Copied' : 'Copy failed');
+  if (ok) btn.classList.add('done');
+  setTimeout(() => { btn.innerHTML = old; btn.classList.remove('done'); delete btn.dataset.busy; }, 1800);
+}
+let toastT;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ---------- views ---------- */
+const view = $('#view');
+
+function backupBanner() {
+  if (!live().length) return '';
+  const age = lastExport ? Math.floor((Date.now() - lastExport) / 864e5) : null;
+  if (lastExport && age < 30) return '';
+  const msg = lastExport ? `Your last backup was ${age} days ago.` : 'You have not downloaded a backup yet.';
+  return `<div class="banner" role="note"><div>${ic('warn')}<span>${msg} Export a copy now, so your code stays safe even if something goes wrong with a phone, laptop or cloud account.</span></div><button type="button" class="btn" data-act="export">${ic('download')}Export backup</button></div>`;
+}
+
+function renderLibrary() {
+  document.title = 'Code Vault';
+  const n = live().length;
+  view.innerHTML = `<div class="wrap">
+    <div class="head"><div><h1>Library</h1><p class="sub">${n} ${n === 1 ? 'folder' : 'folders'}. Click a folder to see its code in full screen.</p></div>
+      <a class="btn primary" href="#/new">${ic('add')}New entry</a></div>
+    ${backupBanner()}
+    <div class="search">${ic('search')}<label class="sr" for="q">Search your code</label><input id="q" type="search" placeholder="Search by title, question, tag or code" value="${esc(q)}" autocomplete="off"></div>
+    <div class="chips" id="chips"></div>
+    <div id="list"></div></div>`;
+  $('#q').addEventListener('input', (ev) => { q = ev.target.value; renderList(); });
+  renderList();
+}
+
+function card(e) {
+  const imgs = (e.images || []).length, lines = e.code.replace(/\n$/, '').split('\n').length;
+  const info = `${lines} ${lines === 1 ? 'line' : 'lines'}${imgs ? ` &middot; ${imgs} ${imgs === 1 ? 'screenshot' : 'screenshots'}` : ''}`;
+  return `<article class="card folder">
+    <button type="button" class="fmain" data-act="openfs" data-id="${esc(e.id)}" aria-label="Open folder ${esc(e.title)} in full screen">
+      <span class="ftop"><span class="ficon">${ic('folder', 30)}</span><span class="badge">${esc(e.lang)}</span></span>
+      <span class="title">${esc(e.title)}</span>
+      <span class="fmeta"><time datetime="${new Date(e.createdAt).toISOString()}">${esc(fmtShort(e.createdAt))}</time><span class="when">${info}</span></span>
+    </button>
+    <div class="ffoot"><a class="btn" href="#/e/${esc(e.id)}">Details</a>
+      <button type="button" class="btn" data-copy="${esc(e.id)}">${ic('copy', 16)}Copy code</button></div>
+  </article>`;
+}
+
+function renderList() {
+  const all = live();
+  const langs = ['All', ...new Set(all.map((e) => e.lang))];
+  if (!langs.includes(filter)) filter = 'All';
+  $('#chips').innerHTML = langs.length > 2 ? langs.map((l) => `<button type="button" class="chip${l === filter ? ' on' : ''}" data-filter="${esc(l)}" aria-pressed="${l === filter}">${esc(l)}</button>`).join('') : '';
+  const t = q.trim().toLowerCase();
+  const list = all.filter((e) => (filter === 'All' || e.lang === filter) &&
+    (!t || [e.title, e.question, e.code, e.lang, (e.tags || []).join(' ')].join('\n').toLowerCase().includes(t)));
+  let html;
+  if (!all.length) html = `<div class="empty"><strong>Nothing saved yet</strong><span>Add your first question and solution. It takes about a minute.</span><a class="btn primary" href="#/new">${ic('add')}Add your first entry</a></div>`;
+  else if (!list.length) html = `<div class="empty"><strong>No matches</strong><span>Try a different word, or clear the language filter.</span></div>`;
+  else html = `<div class="grid folders">${list.map(card).join('')}</div>`;
+  $('#list').innerHTML = html;
+}
+
+function notFound() {
+  document.title = 'Not found · Code Vault';
+  view.innerHTML = `<div class="wrap"><a class="back" href="#/">${ic('back')}Back to library</a><div class="empty"><strong>Entry not found</strong><span>It may have been moved to Trash.</span><a class="btn" href="#/trash">Open Trash</a></div></div>`;
+}
+
+function renderEntry(id) {
+  const e = byId(id);
+  if (!e || e.deleted) return notFound();
+  document.title = e.title + ' · Code Vault';
+  const edited = e.updatedAt - e.createdAt > 60000;
+  const imgs = (e.images || []).filter(safeImg);
+  view.innerHTML = `<div class="wrap">
+    <a class="back" href="#/">${ic('back')}Back to library</a>
+    <div class="head"><div><h1>${esc(e.title)}</h1>
+      <div class="infos"><span class="badge">${esc(e.lang)}</span>${(e.tags || []).map((t) => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+      <p class="sub">Added <time datetime="${new Date(e.createdAt).toISOString()}">${esc(fmtFull(e.createdAt))}</time>${edited ? ` &middot; edited ${esc(fmtShort(e.updatedAt))}` : ''}</p></div>
+      <div class="acts"><a class="btn" href="#/edit/${esc(e.id)}">${ic('edit', 16)}Edit</a><button type="button" class="btn danger" data-act="del" data-id="${esc(e.id)}">${ic('trash', 16)}Delete</button></div></div>
+    ${e.question ? `<section class="sec"><h2>Question</h2><p class="qtext">${esc(e.question)}</p></section>` : ''}
+    ${imgs.length ? `<section class="sec"><h2>Screenshots</h2><div class="shots">${imgs.map((s, i) => `<img src="${s}" alt="Screenshot ${i + 1} for ${esc(e.title)}">`).join('')}</div></section>` : ''}
+    <section class="sec"><h2>Code</h2>
+      <div class="codebox"><div class="codebar"><span class="lang">${esc(e.lang)} &middot; ${e.code.replace(/\n$/, '').split('\n').length} lines</span>
+        <div class="acts"><button type="button" class="btn" data-act="fs" data-id="${esc(e.id)}">${ic('expand', 16)}Full screen</button>
+        <button type="button" class="btn primary" data-copy="${esc(e.id)}">${ic('copy', 16)}Copy all code</button></div></div>
+        <div class="code">${codeHTML(e)}</div></div></section></div>`;
+}
+
+/* ----- add / edit form ----- */
+let form = { images: [], editId: null };
+const draftGet = () => { try { return JSON.parse(ls.get('cv_draft') || 'null'); } catch { return null; } };
+
+function renderForm(id) {
+  const ex = id ? byId(id) : null;
+  if (id && (!ex || ex.deleted)) return notFound();
+  const dr = !ex ? draftGet() : null;
+  const d = ex ? { title: ex.title, question: ex.question || '', lang: ex.lang, tags: (ex.tags || []).join(', '), code: ex.code }
+    : { title: dr?.title || '', question: dr?.question || '', lang: dr?.lang || ls.get('cv_lang') || 'C', tags: dr?.tags || '', code: dr?.code || '' };
+  form = { images: ex ? (ex.images || []).filter(safeImg) : [], editId: ex ? ex.id : null };
+  document.title = (ex ? 'Edit entry' : 'New entry') + ' · Code Vault';
+  view.innerHTML = `<div class="wrap">
+    <div class="head"><div><h1>${ex ? 'Edit entry' : 'New entry'}</h1><p class="sub">${ex ? 'Change anything, then save.' : 'Save the question, a screenshot if you need one, and the code. The date and time are added for you.'}</p></div></div>
+    <form class="form" id="entryForm" novalidate>
+      <div class="field"><label for="f-title">Title</label><input id="f-title" type="text" maxlength="200" placeholder="e.g. Check whether a number is prime" value="${esc(d.title)}" autocomplete="off"></div>
+      <div class="field"><label for="f-q">Question <span class="opt">(optional)</span></label><textarea id="f-q" rows="4" placeholder="Paste the full question from your lab sheet or assignment">${esc(d.question)}</textarea></div>
+      <div class="row2">
+        <div class="field"><label for="f-lang">Language</label><select id="f-lang">${LANGS.map((l) => `<option${l === d.lang ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+        <div class="field"><label for="f-tags">Tags <span class="opt">(optional, separate with commas)</span></label><input id="f-tags" type="text" placeholder="e.g. loops, week 3, lab 2" value="${esc(d.tags)}" autocomplete="off"></div>
+      </div>
+      <div class="field"><span class="lbl">Screenshots <span class="opt">(optional)</span></span>
+        <div class="drop" id="drop"><span class="ico">${ic('upload', 22)}</span>
+          <div class="txt">Drop images here, or paste with Ctrl+V<span>Images are shrunk before saving to keep your storage small.</span></div>
+          <button type="button" class="btn" data-act="pick">Browse files</button></div>
+        <input type="file" id="f-file" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div></div>
+      <div class="field"><label for="f-code">Code</label><textarea id="f-code" class="codein" rows="14" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="Paste your code here. Indentation is kept exactly as you paste it.">${esc(d.code)}</textarea></div>
+      <p class="err" id="formErr" role="alert"></p>
+      <div class="formfoot"><a class="btn" href="${ex ? '#/e/' + esc(ex.id) : '#/'}">Cancel</a><button type="submit" class="btn primary">${ic('check')}Save entry</button></div>
+    </form></div>`;
+  renderThumbs();
+  const f = $('#entryForm');
+  f.addEventListener('submit', onSave);
+  if (!ex) f.addEventListener('input', () => ls.set('cv_draft', JSON.stringify({ title: $('#f-title').value, question: $('#f-q').value, lang: $('#f-lang').value, tags: $('#f-tags').value, code: $('#f-code').value })));
+  const drop = $('#drop');
+  ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (ev) => { ev.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, (ev) => { ev.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (ev) => handleFiles(ev.dataTransfer.files));
+  $('#f-file').addEventListener('change', (ev) => { handleFiles(ev.target.files); ev.target.value = ''; });
+  if (!ex && dr && (dr.title || dr.code)) toast('Restored your unsaved draft');
+}
+
+function renderThumbs() {
+  const t = $('#thumbs'); if (!t) return;
+  t.innerHTML = form.images.map((s, i) => `<div class="thumb"><img src="${s}" alt="Attached screenshot ${i + 1}"><button type="button" class="x" data-act="rmimg" data-i="${i}" aria-label="Remove screenshot ${i + 1}">${ic('close', 22)}</button></div>`).join('');
+}
+
+async function toDataUrl(file) {
+  const bmp = await createImageBitmap(file);
+  const max = 1600, s = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * s)), h = Math.max(1, Math.round(bmp.height * s));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(bmp, 0, 0, w, h);
+  if (bmp.close) bmp.close();
+  return c.toDataURL('image/jpeg', 0.82);
+}
+async function handleFiles(files) {
+  const imgs = [...files].filter((f) => f.type.startsWith('image/'));
+  for (const f of imgs) {
+    if (form.images.length >= 6) { $('#formErr').textContent = 'You can attach up to 6 screenshots per entry.'; break; }
+    try { form.images.push(await toDataUrl(f)); } catch { $('#formErr').textContent = 'That image could not be read.'; }
+  }
+  renderThumbs();
+}
+document.addEventListener('paste', (ev) => {
+  if (!$('#entryForm') || !ev.clipboardData) return;
+  const files = [...ev.clipboardData.files].filter((f) => f.type.startsWith('image/'));
+  if (files.length) { ev.preventDefault(); handleFiles(files); }
+});
+
+async function onSave(ev) {
+  ev.preventDefault();
+  const title = $('#f-title').value.trim(), code = $('#f-code').value.replace(/\r\n?/g, '\n');
+  const err = $('#formErr');
+  if (!title) { err.textContent = 'Please add a title.'; $('#f-title').focus(); return; }
+  if (!code.trim()) { err.textContent = 'Please paste the code.'; $('#f-code').focus(); return; }
+  const lang = $('#f-lang').value;
+  const tags = [...new Set($('#f-tags').value.split(',').map((t) => t.trim()).filter(Boolean))].slice(0, 12);
+  const base = form.editId ? byId(form.editId) : null;
+  const e = { ...(base || { id: uid(), createdAt: Date.now(), deleted: false }), title, question: $('#f-q').value.trim(), lang, tags, code, images: form.images };
+  try { await saveEntry(e); } catch { err.textContent = 'Could not save on this device. Free some storage space and try again.'; return; }
+  ls.set('cv_lang', lang); ls.del('cv_draft');
+  toast(base ? 'Changes saved' : 'Saved to your library');
+  location.hash = '#/e/' + e.id;
+}
+
+/* ----- trash ----- */
+function renderTrash() {
+  document.title = 'Trash · Code Vault';
+  const list = entries.filter((e) => e.deleted).sort((a, b) => b.updatedAt - a.updatedAt);
+  view.innerHTML = `<div class="wrap"><div class="head"><div><h1>Trash</h1><p class="sub">Deleted entries wait here so a slip never costs you code. Restore any of them.</p></div></div>
+    ${list.length ? list.map((e) => `<div class="trashrow"><div class="t"><strong>${esc(e.title)}</strong><span class="when">${esc(e.lang)} &middot; deleted ${esc(fmtShort(e.updatedAt))}</span></div>
+      <button type="button" class="btn" data-act="restore" data-id="${esc(e.id)}">${ic('restore', 16)}Restore</button></div>`).join('')
+      : `<div class="empty"><strong>Trash is empty</strong><span>Nothing has been deleted.</span></div>`}</div>`;
+}
+
+/* ----- settings ----- */
+let deferredInstall = null;
+function renderSettings() {
+  document.title = 'Settings · Code Vault';
+  const { url, key } = cfgGet(), s = getSession();
+  view.innerHTML = `<div class="wrap"><div class="head"><div><h1>Settings</h1><p class="sub">Backups, cloud sync and installing the app.</p></div></div>
+    <section class="panel"><h3>Backup</h3>
+      <p>Download everything as one file you control. Keep a copy on your laptop, phone or anywhere else. <strong id="lastExp">${lastExport ? 'Last backup: ' + esc(fmtFull(lastExport)) : 'No backup downloaded yet.'}</strong></p>
+      <div class="acts"><button type="button" class="btn primary" data-act="export">${ic('download')}Export backup</button><button type="button" class="btn" data-act="import">${ic('upload')}Import backup</button></div>
+      <p>Importing never deletes anything. It only adds entries or updates older copies.</p></section>
+    <section class="panel"><h3>Cloud sync <span class="when" style="font-weight:400">(optional)</span></h3>
+      <p>Sign in to keep your phone and laptop in step. Your data is always saved on the device first, so the app works offline.</p>
+      <div class="stat"><span class="dot" id="setDot"></span><span id="setStat"></span></div>
+      <div class="field"><label for="c-url">Supabase project URL</label><input id="c-url" type="url" placeholder="https://xxxx.supabase.co" value="${esc(url)}" autocomplete="off"></div>
+      <div class="field"><label for="c-key">Supabase anon (public) key</label><input id="c-key" type="text" placeholder="eyJ..." value="${esc(key)}" autocomplete="off"></div>
+      <div class="field"><label for="c-mail">Email</label><input id="c-mail" type="email" value="${esc(s?.email || '')}" autocomplete="username"></div>
+      <div class="field"><label for="c-pass">Password</label><input id="c-pass" type="password" autocomplete="current-password"></div>
+      <p class="msg" id="cloudMsg" role="status"></p>
+      <div class="acts"><button type="button" class="btn primary" data-act="signin">${s ? 'Sign in again' : 'Save and sign in'}</button>
+        <button type="button" class="btn" data-act="syncnow"${s ? '' : ' disabled'}>Sync now</button>
+        <button type="button" class="btn" data-act="signout"${s ? '' : ' disabled'}>Sign out</button></div></section>
+    <section class="panel"><h3>Install on this device</h3>
+      <p>Installed, Code Vault opens like a normal app and works offline. On <strong>Android</strong> (Chrome): menu &rarr; Install app. On <strong>Windows</strong> (Chrome or Edge): the install icon at the right of the address bar.</p>
+      ${deferredInstall ? `<div class="acts"><button type="button" class="btn primary" data-act="install">Install Code Vault</button></div>` : ''}
+      <p id="persist"></p></section></div>`;
+  updateStatus();
+  if (navigator.storage && navigator.storage.persisted) navigator.storage.persisted().then((p) => { const el = $('#persist'); if (el) el.textContent = p ? 'Storage protection: on. Your browser will not clear your data to free up space.' : 'Storage protection: not granted yet. Installing the app and using it regularly helps; keep an exported backup too.'; });
+}
+
+/* ---------- router ---------- */
+function route() {
+  const [a, b] = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean);
+  const cur = a === 'new' || a === 'edit' ? 'new' : a === 'trash' ? 'trash' : a === 'settings' ? 'settings' : 'lib';
+  $$('.nav a').forEach((l) => { if (l.dataset.r === cur) l.setAttribute('aria-current', 'page'); else l.removeAttribute('aria-current'); });
+  if (!a) renderLibrary();
+  else if (a === 'new') renderForm();
+  else if (a === 'edit') renderForm(b);
+  else if (a === 'e') renderEntry(b);
+  else if (a === 'trash') renderTrash();
+  else if (a === 'settings') renderSettings();
+  else renderLibrary();
+  fillIcons(view);
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', route);
+
+/* ---------- full screen code ---------- */
+const fsEl = $('#fs');
+let fsPushed = false, fsSize = Number(ls.get('cv_fs')) || 16, fsEntry = null, fsOpener = null, fsReq = null;
+const leaveBrowserFs = () => { if (document.fullscreenElement) { try { document.exitFullscreen().catch(() => {}); } catch {} } };
+function openFs(id) {
+  const e = byId(id); if (!e) return;
+  fsEntry = e; fsOpener = document.activeElement;
+  $('#fsTitle').textContent = e.title; $('#fsLang').textContent = e.lang;
+  $('#fsCode').innerHTML = codeHTML(e);
+  fsEl.style.setProperty('--fs', fsSize + 'px');
+  fsEl.hidden = false; document.body.classList.add('noscroll');
+  history.pushState({ fs: 1 }, '', location.href); fsPushed = true;
+  fsReq = null;
+  try { const p = fsEl.requestFullscreen && fsEl.requestFullscreen(); if (p && p.catch) fsReq = p.catch(() => {}); } catch {}
+  $('#fsClose').focus();
+}
+function closeFs(fromPop) {
+  if (fsEl.hidden) return;
+  fsEl.hidden = true; document.body.classList.remove('noscroll');
+  if (fsReq) fsReq.then(leaveBrowserFs); else leaveBrowserFs(); // wait if the browser is still entering full screen
+  const wasPushed = fsPushed; fsPushed = false;
+  if (wasPushed && !fromPop) history.back();
+  if (fsOpener && fsOpener.focus) fsOpener.focus();
+}
+window.addEventListener('popstate', () => closeFs(true));
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && !fsEl.hidden) closeFs();
+  else if (document.fullscreenElement && fsEl.hidden) leaveBrowserFs();
+});
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !fsEl.hidden) closeFs(); });
+const setFsSize = (n) => { fsSize = Math.min(32, Math.max(10, n)); ls.set('cv_fs', String(fsSize)); fsEl.style.setProperty('--fs', fsSize + 'px'); };
+
+/* ---------- backup: export / import ---------- */
+async function exportAll() {
+  const data = { app: 'code-vault', version: 1, exportedAt: new Date().toISOString(), entries: entries.map(({ dirty, ...r }) => r) };
+  const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `code-vault-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  lastExport = Date.now(); await setMeta('lastExport', lastExport);
+  toast(`Backup downloaded (${entries.filter((e) => !e.deleted).length} entries)`);
+  const h = location.hash.replace(/^#\/?/, '').split('/')[0];
+  if (!h || h === 'settings') route();
+}
+async function importFile(file) {
+  try {
+    const j = JSON.parse(await file.text());
+    if (!j || !Array.isArray(j.entries)) throw new Error('bad');
+    const add = [];
+    for (const r of j.entries) {
+      if (!r || typeof r.id !== 'string' || typeof r.code !== 'string' || typeof r.title !== 'string') continue;
+      const e = {
+        id: r.id, title: r.title.slice(0, 200), question: String(r.question || ''), lang: LANGS.includes(r.lang) ? r.lang : 'Other',
+        tags: Array.isArray(r.tags) ? r.tags.map(String).slice(0, 12) : [], code: r.code, images: (r.images || []).filter(safeImg).slice(0, 6),
+        createdAt: Number(r.createdAt) || Date.now(), updatedAt: Number(r.updatedAt) || Date.now(), deleted: !!r.deleted, dirty: true
+      };
+      const loc = byId(e.id);
+      if (!loc || e.updatedAt > loc.updatedAt) add.push(e);
+    }
+    if (add.length) { await dbPutMany(add); entries = await dbAll(); scheduleSync(); }
+    toast(add.length ? `Imported ${add.length} ${add.length === 1 ? 'entry' : 'entries'}` : 'Nothing new to import');
+    route();
+  } catch { toast('That file is not a Code Vault backup'); }
+}
+
+/* ---------- cloud sync (Supabase REST, no extra libraries) ---------- */
+const cfgGet = () => {
+  const c = window.CV_CONFIG || {};
+  return { url: (ls.get('cv_url') || c.supabaseUrl || '').trim().replace(/\/+$/, ''), key: (ls.get('cv_key') || c.supabaseAnonKey || '').trim() };
+};
+const getSession = () => { try { return JSON.parse(ls.get('cv_session') || 'null'); } catch { return null; } };
+const setSession = (s) => { if (s) ls.set('cv_session', JSON.stringify(s)); else ls.del('cv_session'); };
+let st = { state: 'local', msg: '', at: 0 };
+function setStatus(state, msg = '', at = 0) { st = { state, msg, at }; updateStatus(); }
+function updateStatus() {
+  const { url, key } = cfgGet(), s = getSession();
+  let text, cls = '';
+  if (!url || !key) text = 'Saved on this device';
+  else if (!s) text = 'Cloud sync: not signed in';
+  else if (st.state === 'syncing') { text = 'Syncing…'; cls = 'busy'; }
+  else if (st.state === 'ok') { text = 'Synced at ' + fmtTime(st.at); cls = 'ok'; }
+  else if (st.state === 'offline') { text = 'Offline. Will sync later'; cls = 'busy'; }
+  else if (st.state === 'error') { text = 'Sync problem: ' + st.msg; cls = 'err'; }
+  else { text = 'Signed in as ' + (s.email || 'you'); cls = 'ok'; }
+  [['sbDot', 'sbStat'], ['setDot', 'setStat']].forEach(([d, t]) => {
+    const de = document.getElementById(d), te = document.getElementById(t);
+    if (de) de.className = 'dot ' + cls;
+    if (te) te.textContent = text;
+  });
+}
+async function authReq(grant, body) {
+  const { url, key } = cfgGet();
+  const r = await fetch(`${url}/auth/v1/token?grant_type=${grant}`, { method: 'POST', headers: { apikey: key, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error_description || j.msg || j.message || 'Sign-in failed'); e.status = r.status; throw e; }
+  return j;
+}
+const toSession = (j, email) => ({ access_token: j.access_token, refresh_token: j.refresh_token, expires_at: Date.now() + (j.expires_in || 3600) * 1000, email: email || j.user?.email || '' });
+async function accessToken() {
+  let s = getSession();
+  if (!s) throw new Error('Not signed in');
+  if (s.expires_at - Date.now() < 60000) {
+    try { s = toSession(await authReq('refresh_token', { refresh_token: s.refresh_token }), s.email); setSession(s); }
+    catch (e) { if (e.status === 400 || e.status === 401) setSession(null); throw e; }
+  }
+  return s.access_token;
+}
+async function api(path, opts = {}) {
+  const { url, key } = cfgGet(), t = await accessToken();
+  const r = await fetch(url + path, { ...opts, headers: { apikey: key, Authorization: 'Bearer ' + t, 'Content-Type': 'application/json', ...(opts.headers || {}) } });
+  if (!r.ok) {
+    let m = ''; try { const j = await r.json(); m = j.message || j.hint || j.error || ''; } catch {}
+    if (r.status === 404 || /relation|schema cache|entries/.test(m)) m = 'the entries table is missing. Run supabase-setup.sql in Supabase';
+    throw new Error((m || 'request failed') + ` (${r.status})`);
+  }
+  return r;
+}
+const payload = (e) => ({ title: e.title, question: e.question, lang: e.lang, tags: e.tags, code: e.code, images: e.images, createdAt: e.createdAt });
+
+let syncing = false, syncTimer, lastSyncTry = 0;
+function scheduleSync() { clearTimeout(syncTimer); syncTimer = setTimeout(sync, 1500); }
+async function sync() {
+  const { url, key } = cfgGet();
+  if (!url || !key || !getSession() || syncing) return;
+  if (!navigator.onLine) return setStatus('offline');
+  syncing = true; lastSyncTry = Date.now(); setStatus('syncing');
+  let changed = false;
+  try {
+    // 1) pull newer copies from the cloud
+    let since = (await getMeta('lastPull')) || 0, maxSeen = since;
+    for (;;) {
+      const rows = await (await api(`/rest/v1/entries?select=id,data,updated_at,deleted&updated_at=gte.${since}&order=updated_at.asc&limit=200`)).json();
+      for (const r of rows) {
+        const ru = Number(r.updated_at); maxSeen = Math.max(maxSeen, ru);
+        const loc = byId(r.id);
+        if (loc && ru <= loc.updatedAt) continue;
+        if (loc && loc.dirty) { // both sides changed: keep your unsynced version as a copy, never lose it
+          const copy = { ...loc, id: uid(), title: loc.title + ' (conflict copy)', updatedAt: Date.now(), dirty: true };
+          await dbPut(copy); entries.push(copy);
+        }
+        const d = r.data || {};
+        const ne = { id: r.id, title: String(d.title || ''), question: String(d.question || ''), lang: d.lang || 'Other', tags: d.tags || [], code: String(d.code || ''),
+          images: (d.images || []).filter(safeImg), createdAt: Number(d.createdAt) || ru, updatedAt: ru, deleted: !!r.deleted, dirty: false };
+        await dbPut(ne);
+        const k = entries.findIndex((x) => x.id === ne.id);
+        if (k < 0) entries.push(ne); else entries[k] = ne;
+        changed = true;
+      }
+      if (rows.length < 200) break;
+      if (since === Number(rows[rows.length - 1].updated_at)) since += 1; else since = Number(rows[rows.length - 1].updated_at);
+    }
+    await setMeta('lastPull', maxSeen);
+    entries = await dbAll();
+    // 2) push local changes
+    const dirty = entries.filter((e) => e.dirty);
+    for (let i = 0; i < dirty.length; i += 8) {
+      const batch = dirty.slice(i, i + 8), sent = new Map(batch.map((e) => [e.id, e.updatedAt]));
+      const rows = batch.map((e) => ({ id: e.id, data: payload(e), updated_at: e.updatedAt, deleted: !!e.deleted }));
+      await api('/rest/v1/entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) });
+      for (const [id, ua] of sent) { const cur = byId(id); if (cur && cur.updatedAt === ua) { cur.dirty = false; await dbPut(cur); } }
+    }
+    setStatus('ok', '', Date.now());
+  } catch (e) {
+    if (!navigator.onLine || e instanceof TypeError) setStatus('offline'); else setStatus('error', e.message);
+  } finally {
+    syncing = false;
+    if (changed) {
+      entries = await dbAll();
+      const ae = document.activeElement, typing = ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName);
+      if (!typing && fsEl.hidden && !$('#entryForm')) route();
+    }
+  }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - lastSyncTry > 60000) sync(); });
+window.addEventListener('online', () => sync());
+
+/* ---------- click handling ---------- */
+document.addEventListener('click', async (ev) => {
+  const t = ev.target.closest('[data-copy],[data-filter],[data-act]');
+  if (!t) return;
+  if (t.dataset.copy) { const e = byId(t.dataset.copy); if (e) flashCopied(t, await copyText(e.code)); return; }
+  if (t.dataset.filter) { filter = t.dataset.filter; renderList(); return; }
+  const id = t.dataset.id;
+  switch (t.dataset.act) {
+    case 'fs': case 'openfs': openFs(id); break;
+    case 'fsClose': closeFs(); break;
+    case 'fsDetails': { // leave full screen and open the entry page (question, screenshots, edit, delete)
+      if (!fsEntry) break;
+      const eid = fsEntry.id; fsOpener = null; closeFs(true);
+      history.replaceState(null, '', '#/' + 'e/' + eid); route(); break;
+    }
+    case 'fsCopy': if (fsEntry) flashCopied(t, await copyText(fsEntry.code)); break;
+    case 'fsPlus': setFsSize(fsSize + 2); break;
+    case 'fsMinus': setFsSize(fsSize - 2); break;
+    case 'pick': $('#f-file').click(); break;
+    case 'rmimg': form.images.splice(Number(t.dataset.i), 1); renderThumbs(); break;
+    case 'export': exportAll(); break;
+    case 'import': $('#imp').click(); break;
+    case 'del': {
+      const e = byId(id); if (!e) break;
+      if (!confirm('Move this entry to Trash? You can restore it from the Trash page.')) break;
+      await saveEntry({ ...e, deleted: true }); toast('Moved to Trash'); location.hash = '#/'; break;
+    }
+    case 'restore': { const e = byId(id); if (e) { await saveEntry({ ...e, deleted: false }); toast('Restored'); if (location.hash === '#/trash') route(); } break; }
+    case 'install':
+      if (deferredInstall) { deferredInstall.prompt(); try { await deferredInstall.userChoice; } catch {} deferredInstall = null; $('#sbInstall').hidden = true; if (location.hash === '#/settings') route(); }
+      break;
+    case 'signin': {
+      const msg = $('#cloudMsg'), url = $('#c-url').value.trim().replace(/\/+$/, ''), key = $('#c-key').value.trim(), email = $('#c-mail').value.trim(), pw = $('#c-pass').value;
+      msg.className = 'msg';
+      if (!/^https:\/\/.+/.test(url) || !key || !email || !pw) { msg.className = 'msg bad'; msg.textContent = 'Fill in the project URL, key, email and password.'; break; }
+      ls.set('cv_url', url); ls.set('cv_key', key); msg.textContent = 'Signing in…';
+      try { setSession(toSession(await authReq('password', { email, password: pw }), email)); msg.className = 'msg good'; msg.textContent = 'Signed in. Syncing…'; $('#c-pass').value = ''; await sync(); route(); }
+      catch (e) { msg.className = 'msg bad'; msg.textContent = e instanceof TypeError ? 'Could not reach Supabase. Check the URL and your internet.' : e.message; }
+      break;
+    }
+    case 'signout': setSession(null); setStatus('local'); toast('Signed out. Your data stays on this device'); route(); break;
+    case 'syncnow': await sync(); toast(st.state === 'ok' ? 'Synced' : 'Sync did not finish'); break;
+  }
+});
+$('#imp').addEventListener('change', (ev) => { if (ev.target.files[0]) importFile(ev.target.files[0]); ev.target.value = ''; });
+window.addEventListener('beforeinstallprompt', (ev) => { ev.preventDefault(); deferredInstall = ev; $('#sbInstall').hidden = false; if (location.hash === '#/settings') route(); });
+window.addEventListener('appinstalled', () => { deferredInstall = null; $('#sbInstall').hidden = true; });
+
+/* ---------- start ---------- */
+(async function init() {
+  fillIcons();
+  try {
+    DB = await openDB();
+    entries = await dbAll();
+    lastExport = (await getMeta('lastExport')) || 0;
+  } catch {
+    view.innerHTML = '<div class="wrap"><div class="empty"><strong>Storage is not available</strong><span>Your browser is blocking local storage (private window?). Open Code Vault in a normal window.</span></div></div>';
+    return;
+  }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  route(); updateStatus();
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+  sync();
+})();
+</script>
+</body>
+</html>

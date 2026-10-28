@@ -1,0 +1,86 @@
+name: Auto release
+
+# Creates a GitHub release when the "version" in package.json changes.
+# The release title and notes come from the matching section of CHANGELOG.md.
+# See RELEASING.md for the steps.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+  workflow_dispatch:   # Actions tab > Auto release > Run workflow
+
+permissions:
+  contents: write      # needed to create the release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Read the version
+        id: ver
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if this version already has a release
+        id: exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          if gh release view "${TAG}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release ${TAG} already exists, nothing to do."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get title and notes from CHANGELOG.md
+        id: notes
+        if: steps.exists.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const version = process.env.VERSION;
+          let title = process.env.TAG;
+          let notes = '';
+          if (fs.existsSync('CHANGELOG.md')) {
+            const lines = fs.readFileSync('CHANGELOG.md', 'utf8').split(/\r?\n/);
+            const v = version.replace(/[.*+?^$(){}|\[\]\\]/g, '\\$&');
+            // "## v1.2.0 – Short title"  (en dash, em dash or hyphen all work)
+            const head = new RegExp('^##\\s+v?' + v + '(?:\\s+[\\u2013\\u2014-]+\\s*(.*))?\\s*$');
+            const i = lines.findIndex((l) => head.test(l));
+            if (i >= 0) {
+              const m = lines[i].match(head);
+              if (m[1] && m[1].trim()) title = m[1].trim();
+              const body = [];
+              for (let j = i + 1; j < lines.length && !/^##\s/.test(lines[j]); j++) body.push(lines[j]);
+              notes = body.join('\n').trim();
+            }
+          }
+          fs.writeFileSync('release-notes.md', notes);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, 'title=' + title.replace(/[\r\n]+/g, ' ') + '\nhas_notes=' + (notes ? 'true' : 'false') + '\n');
+          EOF
+
+      - name: Create the release
+        if: steps.exists.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          TITLE: ${{ steps.notes.outputs.title }}
+          HAS_NOTES: ${{ steps.notes.outputs.has_notes }}
+        run: |
+          if [ "${HAS_NOTES}" = "true" ]; then
+            gh release create "${TAG}" --title "${TITLE}" --notes-file release-notes.md --target "${GITHUB_SHA}"
+          else
+            gh release create "${TAG}" --title "${TITLE}" --generate-notes --target "${GITHUB_SHA}"
+          fi

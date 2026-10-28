@@ -1,0 +1,16 @@
+/* Code Vault syntax colours (all pass 4.5:1 on #0B0D10) */
+.hljs{color:#E6EAF0}
+.hljs-keyword,.hljs-selector-tag,.hljs-meta .hljs-keyword,.hljs-doctag,.hljs-template-tag,.hljs-template-variable{color:#C4A7FF}
+.hljs-meta,.hljs-meta .hljs-string{color:#C4A7FF}
+.hljs-string,.hljs-regexp,.hljs-addition,.hljs-attribute,.hljs-meta .hljs-string{color:#F5C97A}
+.hljs-number,.hljs-literal,.hljs-symbol,.hljs-bullet,.hljs-link{color:#FF9E80}
+.hljs-title,.hljs-title.function_,.hljs-section,.hljs-name{color:#86EFAC}
+.hljs-built_in,.hljs-type,.hljs-class .hljs-title,.hljs-title.class_,.hljs-selector-class,.hljs-selector-id{color:#7DD3FC}
+.hljs-attr,.hljs-variable,.hljs-property,.hljs-params{color:#E6EAF0}
+.hljs-tag{color:#9AA4B2}
+.hljs-tag .hljs-name{color:#FF9E80}
+.hljs-tag .hljs-attr{color:#7DD3FC}
+.hljs-comment,.hljs-quote{color:#8793A3;font-style:italic}
+.hljs-deletion{color:#FCA5A5}
+.hljs-emphasis{font-style:italic}
+.hljs-strong{font-weight:700}
